@@ -149,26 +149,69 @@ public class BoxOffice extends AbstractActor {
     return getContext().actorOf(TicketSeller.props(name), name);
   }
 
-  private void create(String name, int tickets) {
-    ActorRef eventTickets = createTicketSeller(name);
-    List<TicketSeller.Ticket> newTickets = IntStream.rangeClosed(1, tickets)
-        .mapToObj(ticketId -> (new TicketSeller.Ticket(ticketId))).collect(Collectors.toList());
+  @Override
+  public Receive createReceive() {
+    return receiveBuilder()
+        .match(CreateEvent.class, this::createEvent)
+        .match(GetTickets.class, this::getTickets)
+        .match(GetEvent.class, this::getEvent)
+        .match(GetEvents.class, this::getEvents)
+        .match(CancelEvent.class, this::cancelEvent)
+        .build();
+  }
 
-    eventTickets.tell(new TicketSeller.Add(newTickets), getSelf());
-    getContext().sender().tell(new EventCreated(new Event(name, tickets)), getSelf());
+  private void createEvent(CreateEvent createEvent) {
+    log.debug(msg, createEvent);
+
+    Optional<ActorRef> child = getContext().findChild(createEvent.name);
+    if (child.isPresent()) {
+      getContext().sender().tell(new EventExists(), self());
+    } else {
+      ActorRef eventTickets = createTicketSeller(createEvent.name);
+      List<TicketSeller.Ticket> newTickets =
+          IntStream.rangeClosed(1, createEvent.tickets)
+              .mapToObj(ticketId -> (new TicketSeller.Ticket(ticketId)))
+              .collect(Collectors.toList());
+
+      eventTickets.tell(new TicketSeller.Add(newTickets), getSelf());
+      getContext().sender().tell(new EventCreated(new Event(createEvent.name, createEvent.tickets)), getSelf());
+    }
+  }
+
+  private void getTickets(GetTickets getTickets) {
+    log.debug(msg, getTickets);
+
+    Optional<ActorRef> child = getContext().findChild(getTickets.event);
+    if (child.isPresent())
+      child.get().forward(new TicketSeller.Buy(getTickets.tickets), getContext());
+    else
+      getContext().sender().tell(new TicketSeller.Tickets(getTickets.event), getSelf());
+  }
+
+  private void getEvent(GetEvent getEvent) {
+    log.debug(msg, getEvent);
+
+    Optional<ActorRef> child = getContext().findChild(getEvent.name);
+    if (child.isPresent())
+      child.get().forward(new TicketSeller.GetEvent(), getContext());
+    else
+      getContext().sender().tell(Optional.empty(), getSelf());
   }
 
   @SuppressWarnings("unchecked")
-  private CompletionStage<Events> getEvents() {
+  private void getEvents(GetEvents getEvents) {
+    log.debug(msg, getEvents);
+
     // 子アクター（TicketSeller）に ask した結果のリストを作成
     List<CompletableFuture<Optional<Event>>> children = new ArrayList<>();
-    getContext().getChildren().forEach (child ->
-      children.add(ask(getSelf(), new GetEvent(child.path().name()), timeout)
-          .thenApply(event -> (Optional<Event>) event).toCompletableFuture()));
+    getContext().getChildren().forEach(child ->
+        children.add(ask(getSelf(), new GetEvent(child.path().name()), timeout)
+            .thenApply(event -> (Optional<Event>) event)
+            .toCompletableFuture()));
 
     // List<CompletableFuture<Optional<Event>>> の children を CompletionStage<Events> に変換
     // Events は List<Event> を持つ
-    return CompletableFuture
+    CompletionStage<Events> futureEvents = CompletableFuture
         .allOf(children.toArray(new CompletableFuture[0]))
         .thenApply(ignored -> {
           List<Event> events = children.stream()
@@ -177,53 +220,17 @@ public class BoxOffice extends AbstractActor {
               .collect(Collectors.toList());
           return new Events(events);
         });
+
+    pipe(futureEvents, getContext().dispatcher()).to(sender());
   }
 
-  @Override
-  public Receive createReceive() {
+  private void cancelEvent(CancelEvent cancelEvent) {
+    log.debug(msg, cancelEvent);
 
-    return receiveBuilder()
-        .match(CreateEvent.class, createEvent -> {
-          log.debug(msg, createEvent);
-
-          Optional<ActorRef> child = getContext().findChild(createEvent.name);
-          if (child.isPresent())
-            getContext().sender().tell(new EventExists(), self());
-          else
-            create(createEvent.name, createEvent.tickets);
-        })
-        .match(GetTickets.class, getTickets -> {
-          log.debug(msg, getTickets);
-
-          Optional<ActorRef> child = getContext().findChild(getTickets.event);
-          if (child.isPresent())
-            child.get().forward(new TicketSeller.Buy(getTickets.tickets), getContext());
-          else
-            getContext().sender().tell(new TicketSeller.Tickets(getTickets.event), getSelf());
-        })
-        .match(GetEvent.class, getEvent -> {
-          log.debug(msg, getEvent);
-
-          Optional<ActorRef> child = getContext().findChild(getEvent.name);
-          if (child.isPresent())
-            child.get().forward(new TicketSeller.GetEvent(), getContext());
-          else
-            getContext().sender().tell(Optional.empty(), getSelf());
-        })
-        .match(GetEvents.class, getEvents -> {
-          log.debug(msg, getEvents);
-
-          pipe(getEvents(), getContext().dispatcher()).to(sender());
-        })
-        .match(CancelEvent.class, cancelEvent -> {
-          log.debug(msg, cancelEvent);
-
-          Optional<ActorRef> child = getContext().findChild(cancelEvent.name);
-          if (child.isPresent())
-            child.get().forward(new TicketSeller.Cancel(), getContext());
-          else
-            getContext().sender().tell(Optional.empty(), getSelf());
-        })
-        .build();
+    Optional<ActorRef> child = getContext().findChild(cancelEvent.name);
+    if (child.isPresent())
+      child.get().forward(new TicketSeller.Cancel(), getContext());
+    else
+      getContext().sender().tell(Optional.empty(), getSelf());
   }
 }
