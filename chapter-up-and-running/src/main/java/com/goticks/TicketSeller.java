@@ -32,33 +32,41 @@ public class TicketSeller extends AbstractActor implements ITicketSeller {
   @Override
   public Receive createReceive() {
     return receiveBuilder()
-        .match(Add.class, add -> {
-          log.debug(msg, add);
-
-          tickets.addAll(add.getTickets());
-        })
-        .match(Buy.class, buy -> {
-          log.debug(msg, buy);
-
-          if (tickets.size() >= buy.getTickets()) {
-            List<Ticket> entries = tickets.subList(0, buy.getTickets());
-            getContext().sender().tell(new Tickets(event, entries), getSelf());
-            entries.clear();
-          } else {
-            getContext().sender().tell(new Tickets(event), getSelf());
-          }
-        })
-        .match(GetEvent.class, getEvent -> {
-          log.debug(msg, getEvent);
-
-          sender().tell(Optional.of(new BoxOffice.Event(event, tickets.size())), self());
-        })
-        .match(Cancel.class, getCancel -> {
-          log.debug(msg, getCancel);
-
-          sender().tell(Optional.of(new BoxOffice.Event(event, tickets.size())), self());
-          self().tell(PoisonPill.getInstance(), self());
-        })
+        .match(Add.class, this::add)
+        .match(Buy.class, this::buy)
+        .match(GetEvent.class, this::getEvent)
+        .match(Cancel.class, this::cancel)
         .build();
+  }
+
+  private void add(Add add) {
+    log.debug(msg, add);
+
+    tickets.addAll(add.getTickets());
+  }
+
+  private void buy(Buy buy){
+    log.debug(msg, buy);
+
+    if (tickets.size() >= buy.getTickets()) {
+      List<Ticket> entries = tickets.subList(0, buy.getTickets());
+      getContext().sender().tell(new Tickets(event, entries), getSelf());
+      entries.clear();
+    } else {
+      getContext().sender().tell(new Tickets(event), getSelf());
+    }
+  }
+
+  private void getEvent(GetEvent getEvent) {
+    log.debug(msg, getEvent);
+
+    sender().tell(Optional.of(new BoxOffice.Event(event, tickets.size())), self());
+  }
+
+  private void cancel(Cancel cancel){
+    log.debug(msg, cancel);
+
+    sender().tell(Optional.of(new BoxOffice.Event(event, tickets.size())), self());
+    self().tell(PoisonPill.getInstance(), self());
   }
 }
