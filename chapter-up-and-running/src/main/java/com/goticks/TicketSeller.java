@@ -6,19 +6,14 @@ import akka.actor.Props;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
 
-import java.util.*;
-import java.util.stream.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 // アクタークラスの定義
-public class TicketSeller extends AbstractActor {
+public class TicketSeller extends AbstractActor implements ITicketSeller {
   private final LoggingAdapter log = Logging.getLogger(getContext().getSystem(), this);
   private final String msg = " 📩 {}";
-
-  // propsの定義
-  public static Props props(String event) {
-    return Props.create(TicketSeller.class, () -> new TicketSeller(event));
-  }
-
   private final String event;
 
   // コンストラクタ
@@ -26,73 +21,10 @@ public class TicketSeller extends AbstractActor {
     this.event = event;
   }
 
-  // メッセージプロトコルの定義
-  // ------------------------------------------>
-  public static class Add extends AbstractMessage {
-    private final List<Ticket> tickets;
-
-    public Add(List<Ticket> tickets) {
-      this.tickets = Collections.unmodifiableList(new ArrayList<>(tickets));
-    }
-
-    public List<Ticket> getTickets() {
-      return tickets;
-    }
+  // propsの定義
+  public static Props props(String event) {
+    return Props.create(TicketSeller.class, () -> new TicketSeller(event));
   }
-
-  public static class Ticket extends AbstractMessage {
-    private final int id;
-
-    public Ticket(int id) {
-      this.id = id;
-    }
-
-    public int getId() {
-      return id;
-    }
-  }
-
-  public static class Tickets extends AbstractMessage {
-    private final String event;
-    private final List<Ticket> entries;
-
-    public Tickets(String event, List<Ticket> entries) {
-      this.event = event;
-      this.entries = Collections.unmodifiableList(new ArrayList<>(entries));
-    }
-
-    public Tickets(String event) {
-      this.event = event;
-      this.entries = new ArrayList<>();
-    }
-
-    public String getEvent() {
-      return event;
-    }
-
-    public List<Ticket> getEntries() {
-      return entries;
-    }
-  }
-
-  public static class Buy extends AbstractMessage {
-    private final int tickets;
-
-    public Buy(int tickets) {
-      this.tickets = tickets;
-    }
-
-    public int getTickets() {
-      return tickets;
-    }
-  }
-
-  public static class GetEvent extends AbstractMessage {
-  }
-
-  public static class Cancel extends AbstractMessage {
-  }
-  // <------------------------------------------
 
   private final List<Ticket> tickets = new ArrayList<>();
 
@@ -108,7 +40,7 @@ public class TicketSeller extends AbstractActor {
         .match(Buy.class, buy -> {
           log.debug(msg, buy);
 
-          if (tickets.size() >= buy.tickets) {
+          if (tickets.size() >= buy.getTickets()) {
             List<Ticket> entries = tickets.subList(0, buy.getTickets());
             getContext().sender().tell(new Tickets(event, entries), getSelf());
             entries.clear();

@@ -9,8 +9,8 @@ import akka.http.javadsl.marshallers.jackson.Jackson;
 import akka.http.javadsl.model.StatusCodes;
 import akka.http.javadsl.server.AllDirectives;
 import akka.http.javadsl.server.Route;
-import com.goticks.BoxOffice.*;
-import com.goticks.EventMarshalling.*;
+import com.goticks.IBoxOffice.*;
+import com.goticks.IEventMarshalling.*;
 
 import java.time.Duration;
 import java.util.Optional;
@@ -20,7 +20,7 @@ import static akka.http.javadsl.server.PathMatchers.segment;
 import static akka.pattern.PatternsCS.ask;
 
 
-class RestApi extends AllDirectives {
+public class RestApi extends AllDirectives {
   private final Duration timeout;
   private final LoggingAdapter log;
   private final ActorRef boxOfficeActor;

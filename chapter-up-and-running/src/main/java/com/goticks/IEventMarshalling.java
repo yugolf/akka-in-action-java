@@ -3,9 +3,9 @@ package com.goticks;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class EventMarshalling {
+interface IEventMarshalling {
 
-  public static class EventDescription {
+  class EventDescription {
     private final int tickets;
 
     @JsonCreator
@@ -18,7 +18,7 @@ public class EventMarshalling {
     }
   }
 
-  public static class TicketRequest {
+  class TicketRequest {
     private final int tickets;
 
     @JsonCreator
@@ -31,7 +31,7 @@ public class EventMarshalling {
     }
   }
 
-  public static class EventError {
+  class EventError {
     private final String message;
 
     @JsonCreator

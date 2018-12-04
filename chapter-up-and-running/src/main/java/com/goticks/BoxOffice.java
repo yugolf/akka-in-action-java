@@ -7,22 +7,20 @@ import akka.event.Logging;
 import akka.event.LoggingAdapter;
 
 import java.time.Duration;
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.stream.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static akka.pattern.PatternsCS.ask;
 import static akka.pattern.PatternsCS.pipe;
 
-public class BoxOffice extends AbstractActor {
+public class BoxOffice extends AbstractActor implements IBoxOffice {
   private final LoggingAdapter log = Logging.getLogger(getContext().getSystem(), this);
   private final String msg = "    📩 {}";
-
-  // propsの定義
-  public static Props props(Duration timeout) {
-    return Props.create(BoxOffice.class, () -> new BoxOffice(timeout));
-  }
-
   private final Duration timeout;
 
   // コンストラクタ
@@ -30,120 +28,10 @@ public class BoxOffice extends AbstractActor {
     this.timeout = timeout;
   }
 
-  // メッセージプロトコルの定義
-  // ------------------------------------------>
-  public static class CreateEvent extends AbstractMessage {
-    private final String name;
-    private final int tickets;
-
-    public CreateEvent(String name, int tickets) {
-      this.name = name;
-      this.tickets = tickets;
-    }
-
-    public String getName() {
-      return name;
-    }
-
-    public int getTickets() {
-      return tickets;
-    }
+  // propsの定義
+  public static Props props(Duration timeout) {
+    return Props.create(BoxOffice.class, () -> new BoxOffice(timeout));
   }
-
-  public static class GetEvent extends AbstractMessage {
-    private final String name;
-
-    public GetEvent(String name) {
-      this.name = name;
-    }
-
-    public String getName() {
-      return name;
-    }
-  }
-
-  public static class GetEvents extends AbstractMessage {
-  }
-
-  public static class GetTickets extends AbstractMessage {
-    private final String event;
-    private final int tickets;
-
-    public GetTickets(String event, int tickets) {
-      this.event = event;
-      this.tickets = tickets;
-    }
-
-    public String getEvent() {
-      return event;
-    }
-
-    public int getTickets() {
-      return tickets;
-    }
-
-  }
-
-  public static class CancelEvent extends AbstractMessage {
-    private final String name;
-
-    public CancelEvent(String name) {
-      this.name = name;
-    }
-
-    public String getName() {
-      return name;
-    }
-  }
-
-  public static class Event extends AbstractMessage {
-    private final String name;
-    private final int tickets;
-
-    public Event(String name, int tickets) {
-      this.name = name;
-      this.tickets = tickets;
-    }
-
-    public String getName() {
-      return name;
-    }
-
-    public int getTickets() {
-      return tickets;
-    }
-  }
-
-  public static class Events extends AbstractMessage {
-    private final List<Event> events;
-
-    public Events(List<Event> events) {
-      this.events = Collections.unmodifiableList(new ArrayList<>(events));
-    }
-
-    public List<Event> getEvents() {
-      return events;
-    }
-  }
-
-  public abstract static class EventResponse extends AbstractMessage {
-  }
-
-  public static class EventCreated extends EventResponse {
-    private final Event event;
-
-    public EventCreated(Event event) {
-      this.event = event;
-    }
-
-    public Event getEvent() {
-      return event;
-    }
-  }
-
-  public static class EventExists extends EventResponse {
-  }
-  // <------------------------------------------
 
   private ActorRef createTicketSeller(String name) {
     return getContext().actorOf(TicketSeller.props(name), name);
@@ -163,35 +51,35 @@ public class BoxOffice extends AbstractActor {
   private void createEvent(CreateEvent createEvent) {
     log.debug(msg, createEvent);
 
-    Optional<ActorRef> child = getContext().findChild(createEvent.name);
+    Optional<ActorRef> child = getContext().findChild(createEvent.getName());
     if (child.isPresent()) {
       getContext().sender().tell(new EventExists(), self());
     } else {
-      ActorRef eventTickets = createTicketSeller(createEvent.name);
+      ActorRef eventTickets = createTicketSeller(createEvent.getName());
       List<TicketSeller.Ticket> newTickets =
-          IntStream.rangeClosed(1, createEvent.tickets)
+          IntStream.rangeClosed(1, createEvent.getTickets())
               .mapToObj(ticketId -> (new TicketSeller.Ticket(ticketId)))
               .collect(Collectors.toList());
 
       eventTickets.tell(new TicketSeller.Add(newTickets), getSelf());
-      getContext().sender().tell(new EventCreated(new Event(createEvent.name, createEvent.tickets)), getSelf());
+      getContext().sender().tell(new EventCreated(new Event(createEvent.getName(), createEvent.getTickets())), getSelf());
     }
   }
 
   private void getTickets(GetTickets getTickets) {
     log.debug(msg, getTickets);
 
-    Optional<ActorRef> child = getContext().findChild(getTickets.event);
+    Optional<ActorRef> child = getContext().findChild(getTickets.getEvent());
     if (child.isPresent())
-      child.get().forward(new TicketSeller.Buy(getTickets.tickets), getContext());
+      child.get().forward(new TicketSeller.Buy(getTickets.getTickets()), getContext());
     else
-      getContext().sender().tell(new TicketSeller.Tickets(getTickets.event), getSelf());
+      getContext().sender().tell(new TicketSeller.Tickets(getTickets.getEvent()), getSelf());
   }
 
   private void getEvent(GetEvent getEvent) {
     log.debug(msg, getEvent);
 
-    Optional<ActorRef> child = getContext().findChild(getEvent.name);
+    Optional<ActorRef> child = getContext().findChild(getEvent.getName());
     if (child.isPresent())
       child.get().forward(new TicketSeller.GetEvent(), getContext());
     else
@@ -227,7 +115,7 @@ public class BoxOffice extends AbstractActor {
   private void cancelEvent(CancelEvent cancelEvent) {
     log.debug(msg, cancelEvent);
 
-    Optional<ActorRef> child = getContext().findChild(cancelEvent.name);
+    Optional<ActorRef> child = getContext().findChild(cancelEvent.getName());
     if (child.isPresent())
       child.get().forward(new TicketSeller.Cancel(), getContext());
     else
