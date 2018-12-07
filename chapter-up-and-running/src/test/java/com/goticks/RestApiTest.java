@@ -42,6 +42,16 @@ public class RestApiTest extends JUnitRouteTest {
         .assertStatusCode(StatusCodes.CREATED)
         .assertMediaType("application/json")
         .assertEntity("{\"name\":\"RHCP\",\"tickets\":3}");
+  }
+
+  @Test
+  public void testGetEvents() {
+    appRoute.run(HttpRequest.POST("/events/RHCP")
+        .withEntity(MediaTypes.APPLICATION_JSON.toContentType(),
+            "{\"tickets\": 3}"))
+        .assertStatusCode(StatusCodes.CREATED)
+        .assertMediaType("application/json")
+        .assertEntity("{\"name\":\"RHCP\",\"tickets\":3}");
 
     appRoute.run(HttpRequest.GET("/events"))
         .assertStatusCode(StatusCodes.OK)
@@ -51,6 +61,23 @@ public class RestApiTest extends JUnitRouteTest {
 
   @Test
   public void testBuy() {
+    appRoute.run(HttpRequest.POST("/events/RHCP")
+        .withEntity(MediaTypes.APPLICATION_JSON.toContentType(),
+            "{\"tickets\": 3}"))
+        .assertStatusCode(StatusCodes.CREATED)
+        .assertMediaType("application/json")
+        .assertEntity("{\"name\":\"RHCP\",\"tickets\":3}");
+
+    appRoute.run(HttpRequest.POST("/events/RHCP/tickets")
+        .withEntity(MediaTypes.APPLICATION_JSON.toContentType(),
+            "{\"tickets\": 2}"))
+        .assertStatusCode(StatusCodes.CREATED)
+        .assertMediaType("application/json")
+        .assertEntity("{\"entries\":[{\"id\":1},{\"id\":2}],\"event\":\"RHCP\"}");
+  }
+
+  @Test
+  public void testBuyAndGetEvents() {
     appRoute.run(HttpRequest.POST("/events/RHCP")
         .withEntity(MediaTypes.APPLICATION_JSON.toContentType(),
             "{\"tickets\": 3}"))
@@ -127,6 +154,21 @@ public class RestApiTest extends JUnitRouteTest {
 
   @Test
   public void testCancel() {
+    appRoute.run(HttpRequest.POST("/events/RHCP")
+        .withEntity(MediaTypes.APPLICATION_JSON.toContentType(),
+            "{\"tickets\": 3}"))
+        .assertStatusCode(StatusCodes.CREATED)
+        .assertMediaType("application/json")
+        .assertEntity("{\"name\":\"RHCP\",\"tickets\":3}");
+
+    appRoute.run(HttpRequest.DELETE("/events/RHCP"))
+        .assertStatusCode(StatusCodes.OK)
+        .assertMediaType("application/json")
+        .assertEntity("{\"name\":\"RHCP\",\"tickets\":3}");
+  }
+
+  @Test
+  public void testCancelAndGetEvents() {
     appRoute.run(HttpRequest.POST("/events/RHCP")
         .withEntity(MediaTypes.APPLICATION_JSON.toContentType(),
             "{\"tickets\": 3}"))

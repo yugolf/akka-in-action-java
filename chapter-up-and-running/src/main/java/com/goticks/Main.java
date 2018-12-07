@@ -30,6 +30,7 @@ public class Main {
 
     final ActorSystem system = ActorSystem.create("go-ticks");
     final LoggingAdapter log = Logging.getLogger(system, Main.class);
+    log.info("start actor system: {}", system.name());
 
     final Http http = Http.get(system);
     final ActorMaterializer materializer = ActorMaterializer.create(system);

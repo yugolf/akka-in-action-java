@@ -104,6 +104,7 @@ public class BoxOffice extends AbstractActor implements IBoxOffice {
         .thenApply(ignored -> {
           List<Event> events = children.stream()
               .map(CompletableFuture::join)
+              .filter(Optional::isPresent)
               .map(Optional::get)
               .collect(Collectors.toList());
           return new Events(events);
