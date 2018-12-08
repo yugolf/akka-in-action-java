@@ -28,7 +28,8 @@ public class Main {
     final String host = config.getString("http.host");
     final int port = config.getInt("http.port");
 
-    final ActorSystem system = ActorSystem.create("go-ticks");
+    // TODO: 0.0. アクターシステムを生成する
+    final ActorSystem system ;//= ActorSystem.create("go-ticks");
     final LoggingAdapter log = Logging.getLogger(system, Main.class);
     log.info("start actor system: {}", system.name());
 

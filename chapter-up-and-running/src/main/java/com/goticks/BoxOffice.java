@@ -33,8 +33,10 @@ public class BoxOffice extends AbstractActor implements IBoxOffice {
     return Props.create(BoxOffice.class, () -> new BoxOffice(timeout));
   }
 
+  // TODO: 1.2. TicketSellerアクターを生成する
   private ActorRef createTicketSeller(String name) {
-    return getContext().actorOf(TicketSeller.props(name), name);
+    //return getContext().actorOf(TicketSeller.props(name), name);
+    throw new UnsupportedOperationException("TODO: 1.2. が未実装です。");
   }
 
   @Override
@@ -61,8 +63,10 @@ public class BoxOffice extends AbstractActor implements IBoxOffice {
               .mapToObj(ticketId -> (new TicketSeller.Ticket(ticketId)))
               .collect(Collectors.toList());
 
-      eventTickets.tell(new TicketSeller.Add(newTickets), getSelf());
-      getContext().sender().tell(new EventCreated(new Event(createEvent.getName(), createEvent.getTickets())), getSelf());
+      // TODO: 1.5. TicketSellerアクターにAddメッセージを送信する
+//      eventTickets.tell(new TicketSeller.Add(newTickets), getSelf());
+      // TODO: 1.6. 送信元アクターにEventCreatedメッセージを送信する
+//      getContext().sender().tell(new EventCreated(new Event(createEvent.getName(), createEvent.getTickets())), getSelf());
     }
   }
 
@@ -70,20 +74,24 @@ public class BoxOffice extends AbstractActor implements IBoxOffice {
     log.debug(msg, getTickets);
 
     Optional<ActorRef> child = getContext().findChild(getTickets.getEvent());
-    if (child.isPresent())
-      child.get().forward(new TicketSeller.Buy(getTickets.getTickets()), getContext());
-    else
-      getContext().sender().tell(new TicketSeller.Tickets(getTickets.getEvent()), getSelf());
+    // TODO: 2.3. TicketSellerアクターにBuyメッセージを送信する(返信先はRestApi)
+//    if (child.isPresent())
+//      child.get().forward(new TicketSeller.Buy(getTickets.getTickets()), getContext());
+    // TODO: 2.4. 送信元アクターに空メッセージを送信する
+//    else
+//      getContext().sender().tell(new TicketSeller.Tickets(getTickets.getEvent()), getSelf());
   }
 
   private void getEvent(GetEvent getEvent) {
     log.debug(msg, getEvent);
 
     Optional<ActorRef> child = getContext().findChild(getEvent.getName());
-    if (child.isPresent())
-      child.get().forward(new TicketSeller.GetEvent(), getContext());
-    else
-      getContext().sender().tell(Optional.empty(), getSelf());
+    // TODO: 3.4. TicketSellerアクターにGetEventメッセージを送信する(返信先はRestApi)
+//    if (child.isPresent())
+//      child.get().forward(new TicketSeller.GetEvent(), getContext());
+    // TODO: 3.5. 送信元アクターに空メッセージを送信する
+//    else
+//      getContext().sender().tell(Optional.empty(), getSelf());
   }
 
   @SuppressWarnings("unchecked")
@@ -92,10 +100,11 @@ public class BoxOffice extends AbstractActor implements IBoxOffice {
 
     // 子アクター（TicketSeller）に ask した結果のリストを作成
     List<CompletableFuture<Optional<Event>>> children = new ArrayList<>();
-    getContext().getChildren().forEach(child ->
-        children.add(ask(getSelf(), new GetEvent(child.path().name()), timeout)
-            .thenApply(event -> (Optional<Event>) event)
-            .toCompletableFuture()));
+    // TODO: 3.3. 自アクターにGetEventメッセージを送信する(応答あり)
+//    getContext().getChildren().forEach(child ->
+//        children.add(ask(getSelf(), new GetEvent(child.path().name()), timeout)
+//            .thenApply(event -> (Optional<Event>) event)
+//            .toCompletableFuture()));
 
     // List<CompletableFuture<Optional<Event>>> の children を CompletionStage<Events> に変換
     // Events は List<Event> を持つ
@@ -110,16 +119,19 @@ public class BoxOffice extends AbstractActor implements IBoxOffice {
           return new Events(events);
         });
 
-    pipe(futureEvents, getContext().dispatcher()).to(sender());
+    // TODO: 3.6. 送信元アクターに取得したEventsメッセージを返す
+//    pipe(futureEvents, getContext().dispatcher()).to(sender());
   }
 
   private void cancelEvent(CancelEvent cancelEvent) {
     log.debug(msg, cancelEvent);
 
     Optional<ActorRef> child = getContext().findChild(cancelEvent.getName());
-    if (child.isPresent())
-      child.get().forward(new TicketSeller.Cancel(), getContext());
-    else
-      getContext().sender().tell(Optional.empty(), getSelf());
+    // TODO: 4.3. TicketSellerアクターにCancelメッセージを送信する(返信先はRestApi)
+//    if (child.isPresent())
+//      child.get().forward(new TicketSeller.Cancel(), getContext());
+    // TODO: 4.4. 送信元アクターに空メッセージを送信する
+//    else
+//      getContext().sender().tell(Optional.empty(), getSelf());
   }
 }

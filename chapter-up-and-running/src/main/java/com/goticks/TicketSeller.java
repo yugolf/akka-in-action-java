@@ -21,9 +21,11 @@ public class TicketSeller extends AbstractActor implements ITicketSeller {
     this.event = event;
   }
 
+  // TODO: 1.1. アクターのファクトリーメソッド(props)を定義
   // propsの定義
   public static Props props(String event) {
-    return Props.create(TicketSeller.class, () -> new TicketSeller(event));
+    //return Props.create(TicketSeller.class, () -> new TicketSeller(event));
+    throw new UnsupportedOperationException("TODO: 1.1. が未実装です。");
   }
 
   private final List<Ticket> tickets = new ArrayList<>();
@@ -32,41 +34,49 @@ public class TicketSeller extends AbstractActor implements ITicketSeller {
   @Override
   public Receive createReceive() {
     return receiveBuilder()
-        .match(Add.class, this::add)
-        .match(Buy.class, this::buy)
-        .match(GetEvent.class, this::getEvent)
-        .match(Cancel.class, this::cancel)
+        // TODO: 1.4.1. メッセージ(Add)受信時のふるまいを定義
+//        .match(Add.class, this::add)
+        // TODO: 2.2.1. メッセージ(Buy)受信時のふるまいを定義
+//        .match(Buy.class, this::buy)
+        // TODO: 3.2.1. メッセージ(GetEvent)受信時のふるまいを定義
+//        .match(GetEvent.class, this::getEvent)
+        // TODO: 4.2.1. メッセージ(Cancel)受信時のふるまいを定義
+//        .match(Cancel.class, this::cancel)
         .build();
   }
 
-  private void add(Add add) {
-    log.debug(msg, add);
+  // TODO: 1.4.2. メッセージ(Add)受信時のふるまいを定義
+//  private void add(Add add) {
+//    log.debug(msg, add);
+//
+//    tickets.addAll(add.getTickets());
+//  }
 
-    tickets.addAll(add.getTickets());
-  }
+  // TODO: 2.2.2. メッセージ(Buy)受信時のふるまいを定義
+//  private void buy(Buy buy){
+//    log.debug(msg, buy);
+//
+//    if (tickets.size() >= buy.getTickets()) {
+//      List<Ticket> entries = tickets.subList(0, buy.getTickets());
+//      getContext().sender().tell(new Tickets(event, entries), getSelf());
+//      entries.clear();
+//    } else {
+//      getContext().sender().tell(new Tickets(event), getSelf());
+//    }
+//  }
 
-  private void buy(Buy buy){
-    log.debug(msg, buy);
+  // TODO: 3.2.2. メッセージ(GetEvent)受信時のふるまいを定義
+//  private void getEvent(GetEvent getEvent) {
+//    log.debug(msg, getEvent);
+//
+//    sender().tell(Optional.of(new BoxOffice.Event(event, tickets.size())), self());
+//  }
 
-    if (tickets.size() >= buy.getTickets()) {
-      List<Ticket> entries = tickets.subList(0, buy.getTickets());
-      getContext().sender().tell(new Tickets(event, entries), getSelf());
-      entries.clear();
-    } else {
-      getContext().sender().tell(new Tickets(event), getSelf());
-    }
-  }
-
-  private void getEvent(GetEvent getEvent) {
-    log.debug(msg, getEvent);
-
-    sender().tell(Optional.of(new BoxOffice.Event(event, tickets.size())), self());
-  }
-
-  private void cancel(Cancel cancel){
-    log.debug(msg, cancel);
-
-    sender().tell(Optional.of(new BoxOffice.Event(event, tickets.size())), self());
-    self().tell(PoisonPill.getInstance(), self());
-  }
+  // TODO: 4.2.2. メッセージ(Cancel)受信時のふるまいを定義
+//  private void cancel(Cancel cancel){
+//    log.debug(msg, cancel);
+//
+//    sender().tell(Optional.of(new BoxOffice.Event(event, tickets.size())), self());
+//    self().tell(PoisonPill.getInstance(), self());
+//  }
 }

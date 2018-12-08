@@ -6,17 +6,18 @@ import java.util.List;
 
 interface ITicketSeller {
   // メッセージプロトコルの定義
-  class Add extends AbstractMessage {
-    private final List<Ticket> tickets;
-
-    public Add(List<Ticket> tickets) {
-      this.tickets = Collections.unmodifiableList(new ArrayList<>(tickets));
-    }
-
-    public List<Ticket> getTickets() {
-      return tickets;
-    }
-  }
+  // TODO: 1.3. メッセージプロトコル(Add)を定義
+//  class Add extends AbstractMessage {
+//    private final List<Ticket> tickets;
+//
+//    public Add(List<Ticket> tickets) {
+//      this.tickets = Collections.unmodifiableList(new ArrayList<>(tickets));
+//    }
+//
+//    public List<Ticket> getTickets() {
+//      return tickets;
+//    }
+//  }
 
   class Ticket extends AbstractMessage {
     private final int id;
@@ -53,21 +54,24 @@ interface ITicketSeller {
     }
   }
 
-  class Buy extends AbstractMessage {
-    private final int tickets;
+  // TODO: 2.1. メッセージプロトコル(Buy, Tickets)を定義
+//  class Buy extends AbstractMessage {
+//    private final int tickets;
+//
+//    public Buy(int tickets) {
+//      this.tickets = tickets;
+//    }
+//
+//    public int getTickets() {
+//      return tickets;
+//    }
+//  }
 
-    public Buy(int tickets) {
-      this.tickets = tickets;
-    }
+  // TODO: 3.1. メッセージプロトコル(GetEvent)を定義
+//  class GetEvent extends AbstractMessage {
+//  }
 
-    public int getTickets() {
-      return tickets;
-    }
-  }
-
-  class GetEvent extends AbstractMessage {
-  }
-
-  class Cancel extends AbstractMessage {
-  }
+  // TODO: 4.1. メッセージプロトコル(Cancel)を定義
+//  class Cancel extends AbstractMessage {
+//  }
 }
