@@ -57,14 +57,14 @@ public class BoxOffice extends AbstractActor implements IBoxOffice {
     if (child.isPresent()) {
       getContext().sender().tell(new EventExists(), self());
     } else {
-      ActorRef eventTickets = createTicketSeller(createEvent.getName());
+      ActorRef ticketSeller = createTicketSeller(createEvent.getName());
       List<TicketSeller.Ticket> newTickets =
           IntStream.rangeClosed(1, createEvent.getTickets())
               .mapToObj(ticketId -> (new TicketSeller.Ticket(ticketId)))
               .collect(Collectors.toList());
 
       // TODO: 1.5. TicketSellerアクターにAddメッセージを送信する
-//      eventTickets.tell(new TicketSeller.Add(newTickets), getSelf());
+//      ticketSeller.tell(new TicketSeller.Add(newTickets), getSelf());
       // TODO: 1.6. 送信元アクターにEventCreatedメッセージを送信する
 //      getContext().sender().tell(new EventCreated(new Event(createEvent.getName(), createEvent.getTickets())), getSelf());
     }
