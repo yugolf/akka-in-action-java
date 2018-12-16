@@ -14,6 +14,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import static akka.pattern.PatternsCS.ask;
 import static akka.pattern.PatternsCS.pipe;
@@ -90,25 +92,26 @@ public class BoxOffice extends AbstractActor implements IBoxOffice {
   private void getEvents(GetEvents getEvents) {
     log.debug(msg, getEvents);
 
-    // 子アクター（TicketSeller）に ask した結果のリストを作成
-    List<CompletableFuture<Optional<Event>>> children = new ArrayList<>();
-    getContext().getChildren().forEach(child ->
-        children.add(ask(getSelf(), new GetEvent(child.path().name()), timeout)
-            .thenApply(event -> (Optional<Event>) event)
-            .toCompletableFuture()));
+    // 子アクター（TicketSeller）に ask した結果のListを作成
+    List<CompletableFuture<Optional<Event>>> children =
+        StreamSupport.stream(getContext().getChildren().spliterator(), true)
+            .map(child -> ask(getSelf(), new GetEvent(child.path().name()), timeout)
+                .thenApply(event -> (Optional<Event>) event)
+                .toCompletableFuture())
+            .collect(Collectors.toList());
 
     // List<CompletableFuture<Optional<Event>>> の children を CompletionStage<Events> に変換
     // Events は List<Event> を持つ
-    CompletionStage<Events> futureEvents = CompletableFuture
-        .allOf(children.toArray(new CompletableFuture[0]))
-        .thenApply(ignored -> {
-          List<Event> events = children.stream()
-              .map(CompletableFuture::join)
-              .filter(Optional::isPresent)
-              .map(Optional::get)
-              .collect(Collectors.toList());
-          return new Events(events);
-        });
+    CompletionStage<Events> futureEvents =
+        CompletableFuture.allOf(children.toArray(new CompletableFuture[0]))
+            .thenApply(ignored -> {
+              List<Event> events = children.stream()
+                  .map(CompletableFuture::join)
+                  .filter(Optional::isPresent)
+                  .map(Optional::get)
+                  .collect(Collectors.toList());
+              return new Events(events);
+            });
 
     pipe(futureEvents, getContext().dispatcher()).to(sender());
   }
